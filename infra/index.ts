@@ -17,6 +17,7 @@ const betterAuthSecret = cfg.requireSecret("betterAuthSecret");
 const betterAuthUrl = cfg.require("betterAuthUrl");
 const passkeyRpId = cfg.require("passkeyRpId");
 const passkeyOrigin = cfg.require("passkeyOrigin");
+const cricketApiKey = cfg.requireSecret("cricketApiKey");
 
 const environment = stack === "prod" ? "production" : "development";
 const workerUrl = pulumi.interpolate`https://${workerName}.${workersDevSubdomain}.workers.dev`;
@@ -82,12 +83,22 @@ const workerScript = new cloudflare.WorkersScript(
       { name: "PASSKEY_RP_ID", text: passkeyRpId },
       { name: "PASSKEY_ORIGIN", text: passkeyOrigin },
     ],
-    secretTextBindings: [{ name: "BETTER_AUTH_SECRET", text: betterAuthSecret }],
+    secretTextBindings: [
+      { name: "BETTER_AUTH_SECRET", text: betterAuthSecret },
+      { name: "CRICKET_API_KEY", text: cricketApiKey },
+    ],
   },
   { dependsOn: [kvNamespace, d1Database] }
 );
 
-// ── 5. Deploy Pages Assets ────────────────────────────────────────────────────
+// ── 5. Cron Trigger (hourly data sync) ───────────────────────────────────────
+new cloudflare.WorkersCronTrigger("cron", {
+  accountId,
+  scriptName: workerScript.name,
+  schedules: ["0 * * * *"],
+});
+
+// ── 6. Deploy Pages Assets ────────────────────────────────────────────────────
 // Always re-deploys — wrangler skips unchanged files.
 const pagesDeploy = new local.Command(
   "pages-deploy",
