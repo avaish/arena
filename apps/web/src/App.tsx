@@ -130,7 +130,7 @@ function App() {
 
           <button
             onClick={handleSignOut}
-            className="px-4 py-2 border border-gray-300 text-sm rounded hover:bg-gray-100"
+            className="block mt-6 px-4 py-2 border border-gray-300 text-sm rounded hover:bg-gray-100"
           >
             sign out
           </button>
