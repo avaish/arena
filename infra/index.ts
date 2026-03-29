@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as path from "path";
 import * as pulumi from "@pulumi/pulumi";
 import * as cloudflare from "@pulumi/cloudflare";
@@ -13,7 +14,11 @@ const kvNamespaceName = cfg.require("kvNamespaceName");
 const d1DatabaseName = cfg.require("d1DatabaseName");
 const workersDevSubdomain = cfg.require("workersDevSubdomain");
 const betterAuthSecret = cfg.requireSecret("betterAuthSecret");
+const betterAuthUrl = cfg.require("betterAuthUrl");
+const passkeyRpId = cfg.require("passkeyRpId");
+const passkeyOrigin = cfg.require("passkeyOrigin");
 
+const environment = stack === "prod" ? "production" : "development";
 const workerUrl = pulumi.interpolate`https://${workerName}.${workersDevSubdomain}.workers.dev`;
 
 // infra/ is one level below the monorepo root
@@ -56,33 +61,33 @@ const pagesProject = new cloudflare.PagesProject("web", {
 });
 
 // ── 4. Deploy Worker ──────────────────────────────────────────────────────────
-// Always re-deploys — wrangler is fast and idempotent.
-const workerDeploy = new local.Command(
-  "worker-deploy",
+// Read the pre-built bundle (produced by `pnpm build` → wrangler --dry-run --outdir dist).
+const workerBundle = path.join(repoRoot, "apps/api/dist/index.js");
+const workerContent = fs.readFileSync(workerBundle, "utf-8");
+
+const workerScript = new cloudflare.WorkersScript(
+  "worker",
   {
-    create: `${wrangler} deploy --env ${stack}`,
-    update: `${wrangler} deploy --env ${stack}`,
-    dir: path.join(repoRoot, "apps/api"),
-    triggers: [Date.now().toString()],
+    accountId,
+    name: workerName,
+    content: workerContent,
+    module: true,
+    compatibilityDate: "2024-12-01",
+    compatibilityFlags: ["nodejs_compat"],
+    kvNamespaceBindings: [{ name: "APP_KV", namespaceId: kvNamespace.id }],
+    d1DatabaseBindings: [{ name: "APP_DB", databaseId: d1Database.id }],
+    plainTextBindings: [
+      { name: "ENVIRONMENT", text: environment },
+      { name: "BETTER_AUTH_URL", text: betterAuthUrl },
+      { name: "PASSKEY_RP_ID", text: passkeyRpId },
+      { name: "PASSKEY_ORIGIN", text: passkeyOrigin },
+    ],
+    secretTextBindings: [{ name: "BETTER_AUTH_SECRET", text: betterAuthSecret }],
   },
-  { dependsOn: [kvNamespace, d1Database] },
+  { dependsOn: [kvNamespace, d1Database] }
 );
 
-// ── 5. Set BETTER_AUTH_SECRET on Worker ──────────────────────────────────────
-// wrangler reads the secret from stdin when passed .
-const workerSecret = new local.Command(
-  "worker-secret",
-  {
-    create: `${wrangler} secret put BETTER_AUTH_SECRET --env ${stack} `,
-    update: `${wrangler} secret put BETTER_AUTH_SECRET --env ${stack} `,
-    dir: path.join(repoRoot, "apps/api"),
-    stdin: betterAuthSecret,
-    triggers: [betterAuthSecret],
-  },
-  { dependsOn: [workerDeploy] },
-);
-
-// ── 6. Deploy Pages Assets ────────────────────────────────────────────────────
+// ── 5. Deploy Pages Assets ────────────────────────────────────────────────────
 // Always re-deploys — wrangler skips unchanged files.
 const pagesDeploy = new local.Command(
   "pages-deploy",
@@ -92,7 +97,7 @@ const pagesDeploy = new local.Command(
     dir: path.join(repoRoot, "apps/web"),
     triggers: [Date.now().toString()],
   },
-  { dependsOn: [pagesProject, workerDeploy] },
+  { dependsOn: [pagesProject, workerScript] }
 );
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
