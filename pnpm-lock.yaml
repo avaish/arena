@@ -130,6 +130,9 @@ importers:
       '@pulumi/cloudflare':
         specifier: ^5.42.0
         version: 5.49.1(ts-node@10.9.2)(typescript@5.9.3)
+      '@pulumi/command':
+        specifier: ^1.0.0
+        version: 1.2.1(ts-node@10.9.2)(typescript@5.9.3)
       '@pulumi/pulumi':
         specifier: ^3.146.0
         version: 3.228.0(ts-node@10.9.2)(typescript@5.9.3)
@@ -2719,6 +2722,17 @@ packages:
 
   /@pulumi/cloudflare@5.49.1(ts-node@10.9.2)(typescript@5.9.3):
     resolution: {integrity: sha512-sc4j3XgKId9g9hIB5ZS4QXCLStZzYwzIAgbeAfW4+O78Nd3/tkNsuEWmUnPTpsw5Ezpc5zIwZxBCwhPX5qg+sA==}
+    dependencies:
+      '@pulumi/pulumi': 3.228.0(ts-node@10.9.2)(typescript@5.9.3)
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+      - typescript
+    dev: false
+
+  /@pulumi/command@1.2.1(ts-node@10.9.2)(typescript@5.9.3):
+    resolution: {integrity: sha512-mutNDIUYP67yCBYOVIidQyxuTwZDY9v/sx9EGbgIv4PXfyfolOKGgGLeoHEbI1lxRwaw2wbTZ3VNIynDnA5VKA==}
+    requiresBuild: true
     dependencies:
       '@pulumi/pulumi': 3.228.0(ts-node@10.9.2)(typescript@5.9.3)
     transitivePeerDependencies:
