@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Monorepo template: Hono API (Cloudflare Workers) + React/Vite frontend (Cloudflare Pages) + D1 database (SQLite/Drizzle) + Better Auth (passkey-only) + Pulumi IaC. Two deployment environments: `dev` and `prod`.
+Sports app monorepo: Hono API (Cloudflare Workers) + React/Vite frontend (Cloudflare Pages) + D1 database (SQLite/Drizzle) + Better Auth (passkey-only) + Pulumi IaC. Two deployment environments: `dev` and `prod`.
 
 ## Commands
 
@@ -38,11 +38,11 @@ pnpm db:migrate:prod      # apply migrations to prod D1
 - **Infra split:** Pulumi manages infrastructure (KV, D1, Worker code, Pages project config). `wrangler pages deploy` uploads web assets per-commit in CI.
 - **Local dev proxy:** Vite proxies `/api/*` → `localhost:8787` (wrangler dev). No CORS in local dev.
 - **VITE_API_URL:** Set by Pulumi in Pages deployment config, baked into the web bundle at build time. Never set manually.
-- **Worker bundle:** `wrangler deploy --dry-run --outdir dist` in `apps/api` produces `dist/skeleton-api.js`. Pulumi reads this file and uploads it.
+- **Worker bundle:** `wrangler deploy --dry-run --outdir dist` in `apps/api` produces `dist/index.js`. Pulumi reads this file and uploads it.
 - **D1 IDs in wrangler.toml:** After first `pulumi up`, copy output IDs from `pulumi stack output` into the `REPLACE_WITH_*` placeholders in `apps/api/wrangler.toml`.
 
 - **Auth (Better Auth):** Passkey-only. `createAuth(env)` is called per-request so it picks up the D1 binding. Auth is mounted at `GET|POST /api/auth/**` in Hono. The `anonymous` plugin creates a user on registration; the `passkey` plugin attaches the credential. Sign-in is purely passkey (no email/password). Auth env vars (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `PASSKEY_RP_ID`, `PASSKEY_ORIGIN`) are set by Pulumi at deploy time; locally they come from `wrangler.toml` `[vars]`.
-- **DB migrations:** The skeleton ships without pre-committed migrations. Run `pnpm db:generate` to create the initial migration from `packages/db/src/schema.ts`, then `pnpm db:migrate:local` to apply it.
+- **DB migrations:** Run `pnpm db:generate` after editing `packages/db/src/schema.ts`, then `pnpm db:migrate:local` / `db:migrate:dev` / `db:migrate:prod` to apply. Dev/prod use `--remote` (wrangler v4 requirement).
 - **Zod schemas:** Defined in `packages/types/src/index.ts`. Add a `z.object(...)` schema and export a `z.infer<>` type alias. Use `zValidator("json", MySchema)` in Hono route handlers — `c.req.valid("json")` is then fully typed.
 - **Tailwind CSS v4:** Configured via `@import "tailwindcss"` in `apps/web/src/index.css`. No `tailwind.config.js` needed.
 - **Testing:** `apps/api` and `packages/types` have test files. `apps/web` has a vitest config with jsdom for future component tests; add `*.test.tsx` files there when needed.
@@ -58,6 +58,6 @@ pnpm db:migrate:prod      # apply migrations to prod D1
 
 ## Adding a new package
 
-1. Create `packages/<name>/` with `package.json` (`name: "@skeleton/<name>"`), `tsconfig.json`, `src/index.ts`.
-2. Add `"packages/<name>"` is already covered by `"packages/*"` in `pnpm-workspace.yaml`.
-3. Import with `"@skeleton/<name>": "workspace:*"` in the consuming package's `package.json`.
+1. Create `packages/<name>/` with `package.json` (`name: "@arena/<name>"`), `tsconfig.json`, `src/index.ts`.
+2. `"packages/<name>"` is already covered by `"packages/*"` in `pnpm-workspace.yaml`.
+3. Import with `"@arena/<name>": "workspace:*"` in the consuming package's `package.json`.

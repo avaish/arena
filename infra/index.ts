@@ -34,7 +34,7 @@ const d1Database = new cloudflare.D1Database("db", {
 // Built by `wrangler deploy --dry-run --outdir dist` in apps/api.
 // Turborepo ensures apps/api builds before infra runs `pulumi up`.
 const workerBundle = fs.readFileSync(
-  path.resolve(__dirname, "../apps/api/dist/arena-api.js"),
+  path.resolve(__dirname, "../apps/api/dist/index.js"),
   "utf-8"
 );
 
@@ -43,6 +43,8 @@ const worker = new cloudflare.WorkersScript("api", {
   name: workerName,
   content: workerBundle,
   module: true,
+  compatibilityDate: "2024-12-01",
+  compatibilityFlags: ["nodejs_compat"],
   kvNamespaceBindings: [{ name: "APP_KV", namespaceId: kvNamespace.id }],
   d1DatabaseBindings: [{ name: "APP_DB", databaseId: d1Database.id }],
   plainTextBindings: [

@@ -11,12 +11,12 @@
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\" --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,md}\" --ignore-path .prettierignore",
-    "deploy:dev": "turbo run build && pnpm --filter infra exec pulumi up --stack dev --yes",
-    "deploy:prod": "turbo run build && pnpm --filter infra exec pulumi up --stack prod --yes",
+    "deploy:dev": "turbo run build --force && pnpm --filter infra exec pulumi up --stack dev --yes && pnpm --filter @arena/web exec wrangler pages deploy dist --project-name arena-web-dev",
+    "deploy:prod": "turbo run build --force && pnpm --filter infra exec pulumi up --stack prod --yes && pnpm --filter @arena/web exec wrangler pages deploy dist --project-name arena-web-prod",
     "db:generate": "pnpm --filter @arena/db exec drizzle-kit generate",
-    "db:migrate:local": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --local",
-    "db:migrate:dev": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env dev",
-    "db:migrate:prod": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env prod"
+    "db:migrate:local": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB",
+    "db:migrate:dev": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env dev --remote",
+    "db:migrate:prod": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env prod --remote"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

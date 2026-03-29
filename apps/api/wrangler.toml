@@ -30,18 +30,18 @@ name = "arena-api-dev"
 [env.dev.vars]
 ENVIRONMENT        = "development"
 BETTER_AUTH_SECRET = "REPLACE_WITH_DEV_AUTH_SECRET"
-BETTER_AUTH_URL    = "REPLACE_WITH_DEV_WORKER_URL"
-PASSKEY_RP_ID      = "REPLACE_WITH_DEV_PAGES_DOMAIN"
-PASSKEY_ORIGIN     = "REPLACE_WITH_DEV_PAGES_ORIGIN"
+BETTER_AUTH_URL    = "https://arena-api-dev.bd86e417f4eef88e2bbb025f00759c32.workers.dev"
+PASSKEY_RP_ID      = "arena-web-dev.pages.dev"
+PASSKEY_ORIGIN     = "https://arena-web-dev.pages.dev"
 
 [[env.dev.kv_namespaces]]
 binding = "APP_KV"
-id      = "REPLACE_WITH_DEV_KV_NAMESPACE_ID"
+id      = "f3327430ecb64d67b602ea76f90c4597"
 
 [[env.dev.d1_databases]]
 binding        = "APP_DB"
 database_name  = "arena-db-dev"
-database_id    = "REPLACE_WITH_DEV_D1_DATABASE_ID"
+database_id    = "3691a0bc-c3ce-453f-9a66-93d6aa7dbb41"
 migrations_dir = "../../packages/db/migrations"
 
 # ── Prod environment ───────────────────────────────────────────────────────────
