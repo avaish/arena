@@ -62,10 +62,12 @@ export const passkey = sqliteTable("passkey", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id),
-  webauthnUserId: text("webauthn_user_id").notNull(),
+  credentialID: text("credential_id").notNull(),
+  webauthnUserId: text("webauthn_user_id"),
   counter: integer("counter").notNull(),
   deviceType: text("device_type").notNull(),
   backedUp: integer("backed_up", { mode: "boolean" }).notNull(),
   transports: text("transports"),
   createdAt: integer("created_at", { mode: "timestamp" }),
+  aaguid: text("aaguid"),
 });

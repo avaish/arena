@@ -71,7 +71,16 @@ app.get("/api/me", requireAuth, (c) => {
   });
 });
 
-app.on(["GET", "POST"], "/api/auth/**", (c) => createAuth(c.env).handler(c.req.raw));
+app.on(["GET", "POST"], "/api/auth/**", async (c) => {
+  let req = c.req.raw;
+  const contentLengthHeader = c.req.header("content-length");
+  if (c.req.method === "POST" && contentLengthHeader === "0") {
+    const headers = new Headers(req.headers);
+    headers.set("content-length", "2");
+    req = new Request(req.url, { method: req.method, headers, body: "{}", duplex: "half" } as RequestInit);
+  }
+  return createAuth(c.env).handler(req);
+});
 
 // ── Error handling ────────────────────────────────────────────────────────────
 

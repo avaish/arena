@@ -18,6 +18,12 @@ export function createAuth(env: AuthEnv) {
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [env.PASSKEY_ORIGIN],
+    advanced: {
+      defaultCookieAttributes: {
+        sameSite: "none",
+        secure: true,
+      },
+    },
     database: drizzleAdapter(drizzle(env.APP_DB, { schema }), {
       provider: "sqlite",
     }),

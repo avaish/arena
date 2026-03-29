@@ -12,3 +12,4 @@ config:
     secure: AAABAEB/kWGn+IEcHYiUGNmOyaGe0QNjf9JmiV/T5BR/eox0rv2RW80eXvwmWz4lW77ykeyXWynNl6FModP1lQ==
   arena-infra:betterAuthSecret:
     secure: AAABAOq+x7+hfWSKxL8AaFyhkejqye5IpbqwMJtfIkZyA8Qg224rjzYy6nt+FXvg4VLNlSBDlwM7fgwmCJnp8YiB4TYnnUpUitymGQ==
+  arena-infra:workersDevSubdomain: atharv-vaish

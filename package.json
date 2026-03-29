@@ -15,8 +15,8 @@
     "deploy:prod": "bash scripts/deploy.sh prod",
     "db:generate": "pnpm --filter @arena/db exec drizzle-kit generate",
     "db:migrate:local": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB",
-    "db:migrate:dev": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env dev --remote",
-    "db:migrate:prod": "pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env prod --remote"
+    "db:migrate:dev": "bash -c 'if [ -f .env ]; then export $(grep -v \"^#\" .env | xargs); fi; pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env dev --remote'",
+    "db:migrate:prod": "bash -c 'if [ -f .env ]; then export $(grep -v \"^#\" .env | xargs); fi; pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env prod --remote'"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -28,6 +28,6 @@
     "turbo": "^2.3.3",
     "typescript-eslint": "^8.0.0",
     "vitest": "^2.1.0",
-    "wrangler": "^3.101.0"
+    "wrangler": "^4.0.0"
   }
 }

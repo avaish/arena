@@ -5,7 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT        = "local"
-BETTER_AUTH_SECRET = "local-dev-secret-replace-in-production-32c"
 BETTER_AUTH_URL    = "http://localhost:8787"
 PASSKEY_RP_ID      = "localhost"
 PASSKEY_ORIGIN     = "http://localhost:5173"
@@ -28,11 +27,11 @@ migrations_dir = "../../packages/db/migrations"
 name = "arena-api-dev"
 
 [env.dev.vars]
-ENVIRONMENT        = "development"
-BETTER_AUTH_SECRET = "REPLACE_WITH_DEV_AUTH_SECRET"
-BETTER_AUTH_URL    = "https://arena-api-dev.bd86e417f4eef88e2bbb025f00759c32.workers.dev"
-PASSKEY_RP_ID      = "arena-web-dev.pages.dev"
-PASSKEY_ORIGIN     = "https://arena-web-dev.pages.dev"
+ENVIRONMENT     = "development"
+BETTER_AUTH_URL = "https://arena-api-dev.atharv-vaish.workers.dev"
+PASSKEY_RP_ID   = "arena-web-dev.pages.dev"
+PASSKEY_ORIGIN  = "https://arena-web-dev.pages.dev"
+# BETTER_AUTH_SECRET is set as a wrangler secret (not in vars)
 
 [[env.dev.kv_namespaces]]
 binding = "APP_KV"

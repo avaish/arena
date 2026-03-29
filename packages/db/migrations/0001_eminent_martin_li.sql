@@ -1,0 +1,1 @@
+ALTER TABLE `passkey` ADD `credential_id` text NOT NULL;

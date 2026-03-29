@@ -6,5 +6,8 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
 
 export const authClient = createAuthClient({
   baseURL: API_BASE,
+  fetchOptions: {
+    credentials: "include",
+  },
   plugins: [anonymousClient(), passkeyClient()],
 });
