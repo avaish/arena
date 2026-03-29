@@ -12,6 +12,8 @@ jobs:
   deploy:
     name: Build, Test & Deploy
     runs-on: ubuntu-latest
+    env:
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
 
     steps:
       - name: Checkout
