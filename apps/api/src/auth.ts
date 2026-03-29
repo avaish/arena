@@ -17,7 +17,7 @@ export function createAuth(env: AuthEnv) {
   return betterAuth({
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
-    trustedOrigins: [env.PASSKEY_ORIGIN],
+    trustedOrigins: [env.PASSKEY_ORIGIN, `https://*.${env.PASSKEY_RP_ID}`],
     database: drizzleAdapter(drizzle(env.APP_DB, { schema }), {
       provider: "sqlite",
     }),
@@ -26,7 +26,6 @@ export function createAuth(env: AuthEnv) {
       passkey({
         rpID: env.PASSKEY_RP_ID,
         rpName: "Arena",
-        origin: env.PASSKEY_ORIGIN,
       }),
     ],
   });
