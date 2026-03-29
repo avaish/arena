@@ -56,18 +56,14 @@ const pagesProject = new cloudflare.PagesProject("web", {
 });
 
 // ── 4. Deploy Worker ──────────────────────────────────────────────────────────
-// Re-deploys only when the compiled bundle changes.
-const workerBundle = new pulumi.asset.FileAsset(
-  path.join(repoRoot, "apps/api/dist/index.js"),
-);
-
+// Always re-deploys — wrangler is fast and idempotent.
 const workerDeploy = new local.Command(
   "worker-deploy",
   {
     create: `${wrangler} deploy --env ${stack}`,
     update: `${wrangler} deploy --env ${stack}`,
     dir: path.join(repoRoot, "apps/api"),
-    triggers: [workerBundle],
+    triggers: [Date.now().toString()],
   },
   { dependsOn: [kvNamespace, d1Database] },
 );
@@ -87,18 +83,14 @@ const workerSecret = new local.Command(
 );
 
 // ── 6. Deploy Pages Assets ────────────────────────────────────────────────────
-// Re-deploys when index.html changes (Vite rewrites it whenever any chunk hash changes).
-const webIndex = new pulumi.asset.FileAsset(
-  path.join(repoRoot, "apps/web/dist/index.html"),
-);
-
+// Always re-deploys — wrangler skips unchanged files.
 const pagesDeploy = new local.Command(
   "pages-deploy",
   {
     create: `${wrangler} pages deploy dist --project-name ${pagesProjectName} --commit-dirty=true`,
     update: `${wrangler} pages deploy dist --project-name ${pagesProjectName} --commit-dirty=true`,
     dir: path.join(repoRoot, "apps/web"),
-    triggers: [webIndex],
+    triggers: [Date.now().toString()],
   },
   { dependsOn: [pagesProject, workerDeploy] },
 );
