@@ -1,0 +1,22 @@
+{
+  "name": "infra",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "echo 'No dev task for infra'",
+    "preview:dev": "pulumi preview --stack dev",
+    "preview:prod": "pulumi preview --stack prod",
+    "up:dev": "pulumi up --stack dev --yes",
+    "up:prod": "pulumi up --stack prod --yes"
+  },
+  "dependencies": {
+    "@pulumi/cloudflare": "^5.42.0",
+    "@pulumi/pulumi": "^3.146.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

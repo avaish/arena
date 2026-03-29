@@ -1,0 +1,9 @@
+config:
+  arena-infra:workerName: arena-api-dev
+  arena-infra:pagesProjectName: arena-web-dev
+  arena-infra:kvNamespaceName: arena-kv-dev
+  arena-infra:d1DatabaseName: arena-db-dev
+  arena-infra:workerEnv: development
+  # Run after cloning:
+  #   pulumi config set --secret cloudflareAccountId <your-id> --stack dev
+  #   pulumi config set --secret betterAuthSecret $(openssl rand -base64 32) --stack dev

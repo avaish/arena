@@ -1,0 +1,67 @@
+name            = "arena-api"
+main            = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT        = "local"
+BETTER_AUTH_SECRET = "local-dev-secret-replace-in-production-32c"
+BETTER_AUTH_URL    = "http://localhost:8787"
+PASSKEY_RP_ID      = "localhost"
+PASSKEY_ORIGIN     = "http://localhost:5173"
+
+[[kv_namespaces]]
+binding = "APP_KV"
+id      = "00000000000000000000000000000001"
+
+[[d1_databases]]
+binding        = "APP_DB"
+database_name  = "arena-db-local"
+database_id    = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "../../packages/db/migrations"
+
+# ── Dev environment ────────────────────────────────────────────────────────────
+# After running `pnpm deploy:dev`, replace placeholders with `pulumi stack output` values.
+# For passkey vars: PASSKEY_RP_ID = your Pages domain, PASSKEY_ORIGIN = https://<pages-domain>
+
+[env.dev]
+name = "arena-api-dev"
+
+[env.dev.vars]
+ENVIRONMENT        = "development"
+BETTER_AUTH_SECRET = "REPLACE_WITH_DEV_AUTH_SECRET"
+BETTER_AUTH_URL    = "REPLACE_WITH_DEV_WORKER_URL"
+PASSKEY_RP_ID      = "REPLACE_WITH_DEV_PAGES_DOMAIN"
+PASSKEY_ORIGIN     = "REPLACE_WITH_DEV_PAGES_ORIGIN"
+
+[[env.dev.kv_namespaces]]
+binding = "APP_KV"
+id      = "REPLACE_WITH_DEV_KV_NAMESPACE_ID"
+
+[[env.dev.d1_databases]]
+binding        = "APP_DB"
+database_name  = "arena-db-dev"
+database_id    = "REPLACE_WITH_DEV_D1_DATABASE_ID"
+migrations_dir = "../../packages/db/migrations"
+
+# ── Prod environment ───────────────────────────────────────────────────────────
+
+[env.prod]
+name = "arena-api-prod"
+
+[env.prod.vars]
+ENVIRONMENT        = "production"
+BETTER_AUTH_SECRET = "REPLACE_WITH_PROD_AUTH_SECRET"
+BETTER_AUTH_URL    = "REPLACE_WITH_PROD_WORKER_URL"
+PASSKEY_RP_ID      = "REPLACE_WITH_PROD_PAGES_DOMAIN"
+PASSKEY_ORIGIN     = "REPLACE_WITH_PROD_PAGES_ORIGIN"
+
+[[env.prod.kv_namespaces]]
+binding = "APP_KV"
+id      = "REPLACE_WITH_PROD_KV_NAMESPACE_ID"
+
+[[env.prod.d1_databases]]
+binding        = "APP_DB"
+database_name  = "arena-db-prod"
+database_id    = "REPLACE_WITH_PROD_D1_DATABASE_ID"
+migrations_dir = "../../packages/db/migrations"

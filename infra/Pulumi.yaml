@@ -1,0 +1,6 @@
+name: arena-infra
+description: Cloudflare infrastructure for the arena monorepo
+runtime:
+  name: nodejs
+  options:
+    typescript: true
