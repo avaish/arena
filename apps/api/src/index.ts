@@ -1,7 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
-import type { ApiResponse, HealthResponse } from "@arena/types";
+import { zValidator } from "@hono/zod-validator";
+import { drizzle } from "drizzle-orm/d1";
+import { eq, and, inArray } from "drizzle-orm";
+import * as schema from "@arena/db";
+import type { ApiResponse, HealthResponse, GameWithTeams, GameStatus } from "@arena/types";
+import { ToggleLeagueSchema, ToggleTeamSchema } from "@arena/types";
 import { createAuth } from "./auth";
 
 type Bindings = {
@@ -70,6 +75,234 @@ app.get("/api/me", requireAuth, (c) => {
     data: { userId: c.var.user.id },
   });
 });
+
+// ── League & Game routes ──────────────────────────────────────────────────────
+
+app.get("/api/leagues", async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const leagues = await db.select().from(schema.league).all();
+  return c.json<ApiResponse<typeof leagues>>({ ok: true, data: leagues });
+});
+
+app.get("/api/leagues/:leagueId/teams", async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const teams = await db
+    .select()
+    .from(schema.team)
+    .where(eq(schema.team.leagueId, c.req.param("leagueId")))
+    .all();
+  return c.json<ApiResponse<typeof teams>>({ ok: true, data: teams });
+});
+
+app.get("/api/leagues/:leagueId/games", async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const leagueId = c.req.param("leagueId");
+  const status = c.req.query("status");
+
+  let query = db
+    .select({
+      id: schema.game.id,
+      leagueId: schema.game.leagueId,
+      homeTeamId: schema.game.homeTeamId,
+      awayTeamId: schema.game.awayTeamId,
+      startsAt: schema.game.startsAt,
+      venue: schema.game.venue,
+      status: schema.game.status,
+      homeScore: schema.game.homeScore,
+      awayScore: schema.game.awayScore,
+      result: schema.game.result,
+      matchday: schema.game.matchday,
+      createdAt: schema.game.createdAt,
+      updatedAt: schema.game.updatedAt,
+      homeTeamName: schema.team.name,
+      homeTeamShortName: schema.team.shortName,
+    })
+    .from(schema.game)
+    .innerJoin(schema.team, eq(schema.game.homeTeamId, schema.team.id))
+    .where(eq(schema.game.leagueId, leagueId))
+    .orderBy(schema.game.startsAt)
+    .$dynamic();
+
+  if (status) {
+    query = query.where(and(eq(schema.game.leagueId, leagueId), eq(schema.game.status, status)));
+  }
+
+  // Two-pass: we need both home and away team names but can't join the same table twice easily.
+  // Instead, do a single query and look up away team names separately.
+  const rows = await query.all();
+
+  const awayTeamIds = [...new Set(rows.map((r) => r.awayTeamId))];
+  const awayTeams =
+    awayTeamIds.length > 0
+      ? await db
+          .select({ id: schema.team.id, name: schema.team.name, shortName: schema.team.shortName })
+          .from(schema.team)
+          .where(inArray(schema.team.id, awayTeamIds))
+          .all()
+      : [];
+  const awayTeamMap = new Map(awayTeams.map((t) => [t.id, t]));
+
+  const games: GameWithTeams[] = rows.map((r) => {
+    const away = awayTeamMap.get(r.awayTeamId);
+    return {
+      ...r,
+      status: r.status as GameStatus,
+      startsAt: r.startsAt.toISOString(),
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      awayTeamName: away?.name ?? "",
+      awayTeamShortName: away?.shortName ?? "",
+      isFavorite: false,
+    };
+  });
+
+  return c.json<ApiResponse<GameWithTeams[]>>({ ok: true, data: games });
+});
+
+// ── User preference routes ────────────────────────────────────────────────────
+
+app.get("/api/user/leagues", requireAuth, async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const rows = await db
+    .select({ leagueId: schema.userLeague.leagueId })
+    .from(schema.userLeague)
+    .where(eq(schema.userLeague.userId, c.var.user.id))
+    .all();
+  return c.json<ApiResponse<string[]>>({ ok: true, data: rows.map((r) => r.leagueId) });
+});
+
+app.post("/api/user/leagues", requireAuth, zValidator("json", ToggleLeagueSchema), async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const { leagueId } = c.req.valid("json");
+  const userId = c.var.user.id;
+
+  const deleted = await db
+    .delete(schema.userLeague)
+    .where(and(eq(schema.userLeague.userId, userId), eq(schema.userLeague.leagueId, leagueId)))
+    .returning();
+
+  if (deleted.length > 0) {
+    return c.json<ApiResponse<{ following: boolean }>>({ ok: true, data: { following: false } });
+  }
+
+  await db.insert(schema.userLeague).values({ userId, leagueId, createdAt: new Date() });
+  return c.json<ApiResponse<{ following: boolean }>>({ ok: true, data: { following: true } });
+});
+
+app.get("/api/user/teams", requireAuth, async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const rows = await db
+    .select({ teamId: schema.userTeam.teamId })
+    .from(schema.userTeam)
+    .where(eq(schema.userTeam.userId, c.var.user.id))
+    .all();
+  return c.json<ApiResponse<string[]>>({ ok: true, data: rows.map((r) => r.teamId) });
+});
+
+app.post("/api/user/teams", requireAuth, zValidator("json", ToggleTeamSchema), async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const { teamId } = c.req.valid("json");
+  const userId = c.var.user.id;
+
+  const deleted = await db
+    .delete(schema.userTeam)
+    .where(and(eq(schema.userTeam.userId, userId), eq(schema.userTeam.teamId, teamId)))
+    .returning();
+
+  if (deleted.length > 0) {
+    return c.json<ApiResponse<{ favorited: boolean }>>({ ok: true, data: { favorited: false } });
+  }
+
+  await db.insert(schema.userTeam).values({ userId, teamId, createdAt: new Date() });
+  return c.json<ApiResponse<{ favorited: boolean }>>({ ok: true, data: { favorited: true } });
+});
+
+app.get("/api/user/feed", requireAuth, async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const userId = c.var.user.id;
+  const favoritesOnly = c.req.query("favorites_only") === "true";
+
+  // Get user's followed leagues and favorite teams
+  const [followedLeagues, favoriteTeams] = await Promise.all([
+    db
+      .select({ leagueId: schema.userLeague.leagueId })
+      .from(schema.userLeague)
+      .where(eq(schema.userLeague.userId, userId))
+      .all(),
+    db
+      .select({ teamId: schema.userTeam.teamId })
+      .from(schema.userTeam)
+      .where(eq(schema.userTeam.userId, userId))
+      .all(),
+  ]);
+
+  const leagueIds = followedLeagues.map((r) => r.leagueId);
+  if (leagueIds.length === 0) {
+    return c.json<ApiResponse<GameWithTeams[]>>({ ok: true, data: [] });
+  }
+
+  const favoriteTeamIds = new Set(favoriteTeams.map((r) => r.teamId));
+
+  // Fetch games from followed leagues with home team info
+  const rows = await db
+    .select({
+      id: schema.game.id,
+      leagueId: schema.game.leagueId,
+      homeTeamId: schema.game.homeTeamId,
+      awayTeamId: schema.game.awayTeamId,
+      startsAt: schema.game.startsAt,
+      venue: schema.game.venue,
+      status: schema.game.status,
+      homeScore: schema.game.homeScore,
+      awayScore: schema.game.awayScore,
+      result: schema.game.result,
+      matchday: schema.game.matchday,
+      createdAt: schema.game.createdAt,
+      updatedAt: schema.game.updatedAt,
+      homeTeamName: schema.team.name,
+      homeTeamShortName: schema.team.shortName,
+    })
+    .from(schema.game)
+    .innerJoin(schema.team, eq(schema.game.homeTeamId, schema.team.id))
+    .where(inArray(schema.game.leagueId, leagueIds))
+    .orderBy(schema.game.startsAt)
+    .all();
+
+  // Look up away team names
+  const awayTeamIds = [...new Set(rows.map((r) => r.awayTeamId))];
+  const awayTeams =
+    awayTeamIds.length > 0
+      ? await db
+          .select({ id: schema.team.id, name: schema.team.name, shortName: schema.team.shortName })
+          .from(schema.team)
+          .where(inArray(schema.team.id, awayTeamIds))
+          .all()
+      : [];
+  const awayTeamMap = new Map(awayTeams.map((t) => [t.id, t]));
+
+  let games: GameWithTeams[] = rows.map((r) => {
+    const away = awayTeamMap.get(r.awayTeamId);
+    const isFavorite = favoriteTeamIds.has(r.homeTeamId) || favoriteTeamIds.has(r.awayTeamId);
+    return {
+      ...r,
+      status: r.status as GameStatus,
+      startsAt: r.startsAt.toISOString(),
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      awayTeamName: away?.name ?? "",
+      awayTeamShortName: away?.shortName ?? "",
+      isFavorite,
+    };
+  });
+
+  if (favoritesOnly) {
+    games = games.filter((g) => g.isFavorite);
+  }
+
+  return c.json<ApiResponse<GameWithTeams[]>>({ ok: true, data: games });
+});
+
+// ── Auth routes ───────────────────────────────────────────────────────────────
 
 app.on(["GET", "POST"], "/api/auth/**", async (c) => {
   let req = c.req.raw;
