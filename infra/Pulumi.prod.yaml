@@ -7,3 +7,9 @@ config:
   # Run after cloning:
   #   pulumi config set --secret cloudflareAccountId <your-id> --stack prod
   #   pulumi config set --secret betterAuthSecret $(openssl rand -base64 32) --stack prod
+
+  arena-infra:cloudflareAccountId:
+    secure: AAABAAjoDOHTq/e8eLzgv4f4RactpN5s5ND2yzfLx5ha6Q7VIrltddvaPVyiY4AxQblVlf44BqqPhFfGGWeaiA==
+  arena-infra:betterAuthSecret:
+    secure: AAABABMBzwVAp6uqAcR2Yk2XFihPiwYoQuaTWh2lSWYugMx4U81VKhxqEM08oRcz8l/XQaonvYPmJ9lJr8EnCS87L5+nAS5Bm2p7lA==
+  arena-infra:workersDevSubdomain: atharv-vaish

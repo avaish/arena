@@ -49,18 +49,18 @@ migrations_dir = "../../packages/db/migrations"
 name = "arena-api-prod"
 
 [env.prod.vars]
-ENVIRONMENT        = "production"
-BETTER_AUTH_SECRET = "REPLACE_WITH_PROD_AUTH_SECRET"
-BETTER_AUTH_URL    = "REPLACE_WITH_PROD_WORKER_URL"
-PASSKEY_RP_ID      = "REPLACE_WITH_PROD_PAGES_DOMAIN"
-PASSKEY_ORIGIN     = "REPLACE_WITH_PROD_PAGES_ORIGIN"
+ENVIRONMENT     = "production"
+BETTER_AUTH_URL = "https://arena-api-prod.atharv-vaish.workers.dev"
+PASSKEY_RP_ID   = "arena-web-prod.pages.dev"
+PASSKEY_ORIGIN  = "https://arena-web-prod.pages.dev"
+# BETTER_AUTH_SECRET is set as a wrangler secret (not in vars)
 
 [[env.prod.kv_namespaces]]
 binding = "APP_KV"
-id      = "REPLACE_WITH_PROD_KV_NAMESPACE_ID"
+id      = "da00e5d137e242df95a51d278b6fca04"
 
 [[env.prod.d1_databases]]
 binding        = "APP_DB"
 database_name  = "arena-db-prod"
-database_id    = "REPLACE_WITH_PROD_D1_DATABASE_ID"
+database_id    = "8e923a30-b356-4bd0-9de6-b615db5af292"
 migrations_dir = "../../packages/db/migrations"
