@@ -16,3 +16,5 @@ config:
   arena-infra:betterAuthUrl: https://arena-api-dev.atharv-vaish.workers.dev
   arena-infra:passkeyRpId: arena-web-dev.pages.dev
   arena-infra:passkeyOrigin: https://arena-web-dev.pages.dev
+  arena-infra:cricketApiKey:
+    secure: AAABALqZPL6HELKzBlQUVi0AN+EVvzukzCXmrR6UowW0ptDyTv6faeFdej4h53St9jJU7Dtdel+qk+5vBh/PBxXEUrU=

@@ -8,6 +8,7 @@ import * as schema from "@arena/db";
 import type { ApiResponse, HealthResponse, GameWithTeams, GameStatus } from "@arena/types";
 import { ToggleLeagueSchema, ToggleTeamSchema } from "@arena/types";
 import { createAuth } from "./auth";
+import { syncIPL } from "./sync";
 
 type Bindings = {
   APP_KV: KVNamespace;
@@ -17,6 +18,7 @@ type Bindings = {
   BETTER_AUTH_URL: string;
   PASSKEY_RP_ID: string;
   PASSKEY_ORIGIN: string;
+  CRICKET_API_KEY: string;
 };
 
 type Variables = {
@@ -65,6 +67,11 @@ app.get("/api/health", (c) => {
     },
   };
   return c.json(body);
+});
+
+app.post("/api/sync", requireAuth, async (c) => {
+  const result = await syncIPL(c.env.APP_DB, c.env.CRICKET_API_KEY);
+  return c.json({ ok: true, data: result } as ApiResponse<typeof result>);
 });
 
 // Protected route example — add requireAuth to any route you want to guard.
@@ -329,4 +336,11 @@ app.onError((err, c) => {
   return c.json<ApiResponse<never>>({ ok: false, error: err.message }, 500);
 });
 
-export default app;
+// ── Scheduled handler (Cron Trigger) ─────────────────────────────────────────
+
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    ctx.waitUntil(syncIPL(env.APP_DB, env.CRICKET_API_KEY));
+  },
+};
