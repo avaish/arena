@@ -13,3 +13,6 @@ config:
   arena-infra:betterAuthSecret:
     secure: AAABABMBzwVAp6uqAcR2Yk2XFihPiwYoQuaTWh2lSWYugMx4U81VKhxqEM08oRcz8l/XQaonvYPmJ9lJr8EnCS87L5+nAS5Bm2p7lA==
   arena-infra:workersDevSubdomain: atharv-vaish
+  arena-infra:betterAuthUrl: https://arena-api-prod.atharv-vaish.workers.dev
+  arena-infra:passkeyRpId: arena-web-prod.pages.dev
+  arena-infra:passkeyOrigin: https://arena-web-prod.pages.dev

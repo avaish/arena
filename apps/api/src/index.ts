@@ -77,7 +77,12 @@ app.on(["GET", "POST"], "/api/auth/**", async (c) => {
   if (c.req.method === "POST" && contentLengthHeader === "0") {
     const headers = new Headers(req.headers);
     headers.set("content-length", "2");
-    req = new Request(req.url, { method: req.method, headers, body: "{}", duplex: "half" } as RequestInit);
+    req = new Request(req.url, {
+      method: req.method,
+      headers,
+      body: "{}",
+      duplex: "half",
+    } as RequestInit);
   }
   return createAuth(c.env).handler(req);
 });
