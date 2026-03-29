@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: deploy-dev-pr-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -14,18 +14,15 @@ permissions:
 
 jobs:
   check:
-    name: Build & Test
+    name: Build, Test & Preview
     runs-on: ubuntu-latest
-
-    outputs:
-      frontend-only: ${{ steps.set-output.outputs.frontend-only }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Detect changes
-        id: filter
+        id: changes
         uses: dorny/paths-filter@v3
         with:
           filters: |
@@ -34,17 +31,6 @@ jobs:
               - 'packages/db/**'
               - 'packages/types/**'
               - 'infra/**'
-            frontend:
-              - 'apps/web/**'
-
-      - name: Set frontend-only output
-        id: set-output
-        run: |
-          if [[ "${{ steps.filter.outputs.backend }}" == "false" && "${{ steps.filter.outputs.frontend }}" == "true" ]]; then
-            echo "frontend-only=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "frontend-only=false" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -67,31 +53,10 @@ jobs:
       - name: Test
         run: pnpm turbo run test
 
-      - name: Upload web build
-        if: steps.set-output.outputs.frontend-only == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-dist
-          path: apps/web/dist/
-
-  deploy-preview:
-    name: Deploy Pages preview (dev)
-    needs: check
-    if: needs.check.outputs.frontend-only == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download web build
-        uses: actions/download-artifact@v4
-        with:
-          name: web-dist
-          path: apps/web/dist
-
-      - name: Deploy Pages preview
-        run: npx wrangler pages deploy apps/web/dist --project-name=arena-web-dev --branch=${{ github.head_ref }} --commit-dirty=true
+      - name: Deploy Pages preview (dev)
+        if: steps.changes.outputs.backend == 'false'
+        working-directory: apps/web
+        run: pnpm exec wrangler pages deploy dist --project-name=arena-web-dev --branch=${{ github.head_ref }} --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
