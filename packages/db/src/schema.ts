@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -71,3 +71,75 @@ export const passkey = sqliteTable("passkey", {
   createdAt: integer("created_at", { mode: "timestamp" }),
   aaguid: text("aaguid"),
 });
+
+// ── Sports tracker tables ────────────────────────────────────────────────────
+
+export const league = sqliteTable("league", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  sport: text("sport").notNull(),
+  season: text("season").notNull(),
+  logoUrl: text("logo_url"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const team = sqliteTable("team", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  shortName: text("short_name").notNull(),
+  leagueId: text("league_id")
+    .notNull()
+    .references(() => league.id),
+  logoUrl: text("logo_url"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const game = sqliteTable("game", {
+  id: text("id").primaryKey(),
+  leagueId: text("league_id")
+    .notNull()
+    .references(() => league.id),
+  homeTeamId: text("home_team_id")
+    .notNull()
+    .references(() => team.id),
+  awayTeamId: text("away_team_id")
+    .notNull()
+    .references(() => team.id),
+  startsAt: integer("starts_at", { mode: "timestamp" }).notNull(),
+  venue: text("venue"),
+  status: text("status").notNull(),
+  homeScore: text("home_score"),
+  awayScore: text("away_score"),
+  result: text("result"),
+  matchday: integer("matchday"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const userLeague = sqliteTable(
+  "user_league",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    leagueId: text("league_id")
+      .notNull()
+      .references(() => league.id),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.leagueId] })]
+);
+
+export const userTeam = sqliteTable(
+  "user_team",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => team.id),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.teamId] })]
+);
