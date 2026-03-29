@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { authClient } from "./auth";
-import type { ApiResponse, HealthResponse } from "@skeleton/types";
+import type { ApiResponse, HealthResponse } from "@arena/types";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
 
@@ -77,7 +77,7 @@ function App() {
   if (isPending) {
     return (
       <main className="min-h-screen bg-gray-50 font-mono p-8">
-        <h1 className="text-2xl font-bold mb-4">skeleton</h1>
+        <h1 className="text-2xl font-bold mb-4">arena</h1>
         <p className="text-gray-500">loading...</p>
       </main>
     );
@@ -85,7 +85,7 @@ function App() {
 
   return (
     <main className="min-h-screen bg-gray-50 font-mono p-8">
-      <h1 className="text-2xl font-bold mb-6">skeleton</h1>
+      <h1 className="text-2xl font-bold mb-6">arena</h1>
 
       {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
 
