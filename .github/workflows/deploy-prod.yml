@@ -32,10 +32,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm turbo run build
-        env:
-          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+        run: pnpm turbo run build --force
 
       - name: Lint
         run: pnpm turbo run lint
@@ -55,17 +52,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Apply DB migrations (prod)
-        run: pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env prod
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Deploy web to Pages (prod)
-        run: |
-          wrangler pages deploy apps/web/dist \
-            --project-name="${{ vars.PAGES_PROJECT_NAME_PROD }}" \
-            --branch=main \
-            --commit-hash="${{ github.sha }}"
+        run: pnpm --filter @arena/api exec wrangler d1 migrations apply APP_DB --env prod --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
