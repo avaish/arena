@@ -51,7 +51,7 @@ describe("GameCard", () => {
     expect(screen.getByText("MA Chidambaram Stadium")).toBeDefined();
   });
 
-  it("does not render venue or date for completed games", () => {
+  it("does not render venue or date for completed games with scores", () => {
     const { container } = render(
       <GameCard
         game={makeGame({
@@ -62,6 +62,19 @@ describe("GameCard", () => {
       />
     );
     expect(container.textContent).not.toContain("MA Chidambaram Stadium");
+  });
+
+  it("renders venue and date for completed games without scores", () => {
+    render(
+      <GameCard
+        game={makeGame({
+          status: "completed",
+          homeScore: null,
+          awayScore: null,
+        })}
+      />
+    );
+    expect(screen.getByText("MA Chidambaram Stadium")).toBeDefined();
   });
 
   it("renders LIVE badge for live games", () => {

@@ -41,19 +41,19 @@ export default function GameCard({ game }: Props) {
         <div className="flex-1">
           <p className="font-medium">
             {game.homeTeamShortName}{" "}
-            {!isCompleted && game.homeScore && (
+            {!(isCompleted && (game.homeScore || game.awayScore)) && game.homeScore && (
               <span className="text-gray-500 font-normal">{game.homeScore}</span>
             )}
           </p>
           <p className="font-medium mt-1">
             {game.awayTeamShortName}{" "}
-            {!isCompleted && game.awayScore && (
+            {!(isCompleted && (game.homeScore || game.awayScore)) && game.awayScore && (
               <span className="text-gray-500 font-normal">{game.awayScore}</span>
             )}
           </p>
         </div>
 
-        {isCompleted ? (
+        {isCompleted && (game.homeScore || game.awayScore) ? (
           <div className="text-right text-sm">
             <p className="text-gray-700 font-medium">{game.homeScore ?? "-"}</p>
             <p className="text-gray-700 font-medium mt-1">{game.awayScore ?? "-"}</p>
