@@ -46,8 +46,34 @@ describe("GameCard", () => {
     expect(container.textContent).not.toContain("Game");
   });
 
-  it("renders venue", () => {
+  it("renders venue for scheduled games", () => {
     render(<GameCard game={makeGame()} />);
+    expect(screen.getByText("MA Chidambaram Stadium")).toBeDefined();
+  });
+
+  it("does not render venue or date for completed games with scores", () => {
+    const { container } = render(
+      <GameCard
+        game={makeGame({
+          status: "completed",
+          homeScore: "180/5 (20)",
+          awayScore: "150/8 (20)",
+        })}
+      />
+    );
+    expect(container.textContent).not.toContain("MA Chidambaram Stadium");
+  });
+
+  it("renders venue and date for completed games without scores", () => {
+    render(
+      <GameCard
+        game={makeGame({
+          status: "completed",
+          homeScore: null,
+          awayScore: null,
+        })}
+      />
+    );
     expect(screen.getByText("MA Chidambaram Stadium")).toBeDefined();
   });
 
@@ -79,6 +105,21 @@ describe("GameCard", () => {
     );
     expect(screen.getByText("180/5 (20)")).toBeDefined();
     expect(screen.getByText("90/3 (10)")).toBeDefined();
+  });
+
+  it("shows scores instead of date/venue for completed games", () => {
+    render(
+      <GameCard
+        game={makeGame({
+          status: "completed",
+          homeScore: "180/5 (20)",
+          awayScore: "150/8 (20)",
+          result: "CSK won by 30 runs",
+        })}
+      />
+    );
+    expect(screen.getByText("180/5 (20)")).toBeDefined();
+    expect(screen.getByText("150/8 (20)")).toBeDefined();
   });
 
   it("renders result for completed games", () => {
