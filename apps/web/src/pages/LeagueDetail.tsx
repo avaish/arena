@@ -32,7 +32,15 @@ export default function LeagueDetail() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold mb-4">{leagueId}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold">{leagueId}</h2>
+        <a
+          href={`/api/leagues/${leagueId}/games/ical`}
+          className="text-xs px-3 py-1 rounded border border-gray-200 text-gray-500 hover:border-gray-300"
+        >
+          iCal
+        </a>
+      </div>
 
       {teams.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">

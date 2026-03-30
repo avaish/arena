@@ -166,6 +166,81 @@ app.get("/api/leagues/:leagueId/games", async (c) => {
   return c.json<ApiResponse<GameWithTeams[]>>({ ok: true, data: games });
 });
 
+app.get("/api/leagues/:leagueId/games/ical", async (c) => {
+  const db = drizzle(c.env.APP_DB, { schema });
+  const leagueId = c.req.param("leagueId");
+
+  const leagueRow = await db
+    .select({ name: schema.league.name })
+    .from(schema.league)
+    .where(eq(schema.league.id, leagueId))
+    .get();
+
+  if (!leagueRow) {
+    return c.json<ApiResponse<never>>({ ok: false, error: "league not found" }, 404);
+  }
+
+  const rows = await db
+    .select({
+      id: schema.game.id,
+      startsAt: schema.game.startsAt,
+      venue: schema.game.venue,
+      homeTeamId: schema.game.homeTeamId,
+      awayTeamId: schema.game.awayTeamId,
+      homeTeamName: schema.team.name,
+    })
+    .from(schema.game)
+    .innerJoin(schema.team, eq(schema.game.homeTeamId, schema.team.id))
+    .where(eq(schema.game.leagueId, leagueId))
+    .orderBy(schema.game.startsAt)
+    .all();
+
+  const awayTeamIds = [...new Set(rows.map((r) => r.awayTeamId))];
+  const awayTeams =
+    awayTeamIds.length > 0
+      ? await db
+          .select({ id: schema.team.id, name: schema.team.name })
+          .from(schema.team)
+          .where(inArray(schema.team.id, awayTeamIds))
+          .all()
+      : [];
+  const awayTeamMap = new Map(awayTeams.map((t) => [t.id, t.name]));
+
+  const toICalDate = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+  const events = rows.map((r) => {
+    const start = new Date(r.startsAt);
+    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000); // 3 hour duration
+    const away = awayTeamMap.get(r.awayTeamId) ?? "TBD";
+    const lines = [
+      "BEGIN:VEVENT",
+      `UID:${r.id}@arena`,
+      `DTSTART:${toICalDate(start)}`,
+      `DTEND:${toICalDate(end)}`,
+      `SUMMARY:${r.homeTeamName} vs ${away}`,
+    ];
+    if (r.venue) lines.push(`LOCATION:${r.venue}`);
+    lines.push("END:VEVENT");
+    return lines.join("\r\n");
+  });
+
+  const ical = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Arena//EN",
+    `X-WR-CALNAME:${leagueRow.name}`,
+    ...events,
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  return new Response(ical, {
+    headers: {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${leagueId}.ics"`,
+    },
+  });
+});
+
 // ── User preference routes ────────────────────────────────────────────────────
 
 app.get("/api/user/leagues", requireAuth, async (c) => {
