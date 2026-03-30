@@ -41,18 +41,29 @@ export default function GameCard({ game }: Props) {
         <div className="flex-1">
           <p className="font-medium">
             {game.homeTeamShortName}{" "}
-            {game.homeScore && <span className="text-gray-500 font-normal">{game.homeScore}</span>}
+            {!isCompleted && game.homeScore && (
+              <span className="text-gray-500 font-normal">{game.homeScore}</span>
+            )}
           </p>
           <p className="font-medium mt-1">
             {game.awayTeamShortName}{" "}
-            {game.awayScore && <span className="text-gray-500 font-normal">{game.awayScore}</span>}
+            {!isCompleted && game.awayScore && (
+              <span className="text-gray-500 font-normal">{game.awayScore}</span>
+            )}
           </p>
         </div>
 
-        <div className="text-right text-xs text-gray-400">
-          <p>{formatDate(game.startsAt)}</p>
-          {game.venue && <p className="mt-0.5">{game.venue}</p>}
-        </div>
+        {isCompleted ? (
+          <div className="text-right text-sm">
+            <p className="text-gray-700 font-medium">{game.homeScore ?? "-"}</p>
+            <p className="text-gray-700 font-medium mt-1">{game.awayScore ?? "-"}</p>
+          </div>
+        ) : (
+          <div className="text-right text-xs text-gray-400">
+            <p>{formatDate(game.startsAt)}</p>
+            {game.venue && <p className="mt-0.5">{game.venue}</p>}
+          </div>
+        )}
       </div>
 
       {game.result && (
