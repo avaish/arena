@@ -31,14 +31,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm turbo run build --force
-
-      - name: Lint
-        run: pnpm turbo run lint
-
-      - name: Test
-        run: pnpm turbo run test
+      - name: Build, Lint & Test
+        run: pnpm turbo run build lint test --force
 
       # ── Dev ──────────────────────────────────────────────────────────────
       - name: Pulumi up (dev)
