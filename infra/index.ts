@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import * as pulumi from "@pulumi/pulumi";
 import * as cloudflare from "@pulumi/cloudflare";
-import { local } from "@pulumi/command";
 
 // ── Stack config ──────────────────────────────────────────────────────────────
 const cfg = new pulumi.Config();
@@ -24,7 +23,6 @@ const workerUrl = pulumi.interpolate`https://${workerName}.${workersDevSubdomain
 
 // infra/ is one level below the monorepo root
 const repoRoot = path.resolve(__dirname, "..");
-const wrangler = path.join(repoRoot, "node_modules/.bin/wrangler");
 
 // ── 1. KV Namespace ───────────────────────────────────────────────────────────
 const kvNamespace = new cloudflare.WorkersKvNamespace("kv", {
@@ -98,22 +96,8 @@ new cloudflare.WorkersCronTrigger("cron", {
   schedules: ["0 * * * *"],
 });
 
-// ── 6. Deploy Pages Assets ────────────────────────────────────────────────────
-// Always re-deploys — wrangler skips unchanged files.
-const pagesDeploy = new local.Command(
-  "pages-deploy",
-  {
-    create: `${wrangler} pages deploy dist --project-name ${pagesProjectName} --commit-dirty=true`,
-    update: `${wrangler} pages deploy dist --project-name ${pagesProjectName} --commit-dirty=true`,
-    dir: path.join(repoRoot, "apps/web"),
-    triggers: [Date.now().toString()],
-  },
-  { dependsOn: [pagesProject, workerScript] }
-);
-
 // ── Outputs ───────────────────────────────────────────────────────────────────
 export const kvNamespaceId = kvNamespace.id;
 export const d1DatabaseId = d1Database.id;
 export const pagesProjectNameOut = pagesProject.name;
-export const pagesDeployUrl = pagesDeploy.stdout;
 export { workerUrl };
