@@ -10,5 +10,10 @@ fi
 echo "→ Building"
 pnpm turbo run build --force
 
-echo "→ Deploying (stack: $STACK)"
+echo "→ Deploying infra (stack: $STACK)"
 pnpm --filter infra exec pulumi up --stack "$STACK" --yes
+
+PAGES_PROJECT=$(pnpm --filter infra exec pulumi stack output pagesProjectNameOut --stack "$STACK" 2>/dev/null)
+
+echo "→ Deploying Pages assets (project: $PAGES_PROJECT)"
+pnpm --filter @arena/web exec wrangler pages deploy dist --project-name "$PAGES_PROJECT" --commit-dirty=true
