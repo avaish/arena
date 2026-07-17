@@ -72,3 +72,7 @@ link to the streaming service when one of the broadcasters is a known
 streamer (MLB.TV, Apple TV, ESPN+/ESPN, Peacock, Paramount+, Prime Video,
 league passes, Willow, …), otherwise the ESPN gamecast page for the game.
 The `/` page shows the same info in a TV column.
+
+Event titles are prefixed with 🏠 when the venue is in the New York metro
+area (NYC boroughs, Long Island arenas, Newark/Harrison/East Rutherford NJ)
+and 📺 otherwise.

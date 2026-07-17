@@ -9,6 +9,8 @@ export interface Game {
   start: string;
   durationMins: number;
   venue?: string;
+  /** True when the venue is in the New York metro area (attendable). */
+  nyArea?: boolean;
   /** Broadcaster / streaming service names, e.g. ["ESPN", "Peacock"]. */
   tv?: string[];
   /** Best link to watch the game (streaming service, or the event page). */

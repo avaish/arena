@@ -19,11 +19,11 @@ export function toIcsUtc(date: Date): string {
 
 /**
  * Fold a content line to stay within the RFC 5545 75-octet limit.
- * Splits at 73 chars (conservative for multi-byte UTF-8) with a
+ * Splits at 68 chars (conservative for multi-byte UTF-8/emoji) with a
  * space-prefixed continuation line.
  */
 export function foldIcsLine(line: string): string {
-  const limit = 73;
+  const limit = 68;
   if (line.length <= limit) return line;
   const parts: string[] = [];
   let rest = line;
@@ -46,7 +46,7 @@ export function gameToVevent(game: Game, dtstamp: Date): string[] {
     `DTSTAMP:${toIcsUtc(dtstamp)}`,
     `DTSTART:${toIcsUtc(start)}`,
     `DTEND:${toIcsUtc(end)}`,
-    `SUMMARY:${escapeIcsText(game.title)}`,
+    `SUMMARY:${game.nyArea ? "🏠" : "📺"} ${escapeIcsText(game.title)}`,
   ];
   if (game.venue) lines.push(`LOCATION:${escapeIcsText(game.venue)}`);
   const description = [

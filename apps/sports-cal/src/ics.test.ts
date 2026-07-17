@@ -45,7 +45,7 @@ describe("gameToVevent", () => {
     const lines = gameToVevent(game, new Date("2026-07-17T00:00:00Z"));
     expect(lines).toContain("DTSTART:20260801T233000Z");
     expect(lines).toContain("DTEND:20260802T020000Z");
-    expect(lines).toContain("SUMMARY:[NBA] Brooklyn Nets vs Boston Celtics");
+    expect(lines).toContain("SUMMARY:📺 [NBA] Brooklyn Nets vs Boston Celtics");
     expect(lines).toContain("LOCATION:Barclays Center\\, Brooklyn\\, New York");
     expect(lines).toContain("UID:espn-nba-401584722@arena-sports-cal");
   });
@@ -56,6 +56,12 @@ describe("gameToVevent", () => {
       "DESCRIPTION:NBA game\\nTV: ESPN\\, NBA League Pass\\nWatch: https://www.espn.com/watch/"
     );
     expect(lines).toContain("URL:https://www.espn.com/watch/");
+  });
+
+  it("marks New York area games with a home icon", () => {
+    const homeGame = { ...game, nyArea: true };
+    const lines = gameToVevent(homeGame, new Date("2026-07-17T00:00:00Z"));
+    expect(lines).toContain("SUMMARY:🏠 [NBA] Brooklyn Nets vs Boston Celtics");
   });
 
   it("omits TV and URL lines when absent", () => {

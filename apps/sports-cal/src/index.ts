@@ -59,7 +59,7 @@ function homePage(payload: CachePayload, host: string): string {
       return `<tr>
         <td>${escapeHtml(ET_FORMAT.format(new Date(g.start)))}</td>
         <td><span class="tag">${escapeHtml(g.league)}</span></td>
-        <td>${escapeHtml(g.title.replace(/^\[[^\]]*\]\s*/, ""))}</td>
+        <td>${g.nyArea ? "🏠" : "📺"} ${escapeHtml(g.title.replace(/^\[[^\]]*\]\s*/, ""))}</td>
         <td>${escapeHtml(g.venue ?? "")}</td>
         <td>${tvCell}</td>
       </tr>`;
@@ -87,6 +87,7 @@ function homePage(payload: CachePayload, host: string): string {
 <h1>My Teams — upcoming games</h1>
 <p>Times shown in Eastern Time. Subscribe on iPhone: <code>webcal://${escapeHtml(host)}/calendar.ics</code>
  (or <a href="/calendar.ics">download the .ics</a>).</p>
+<p class="meta">🏠 in the New York area &nbsp;·&nbsp; 📺 watch from home</p>
 <table>
 <thead><tr><th>When (ET)</th><th>League</th><th>Matchup</th><th>Venue</th><th>TV</th></tr></thead>
 <tbody>

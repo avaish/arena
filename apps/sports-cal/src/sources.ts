@@ -41,6 +41,47 @@ function inWindow(iso: string, window: DateWindow): boolean {
   return !Number.isNaN(t) && t >= window.from.getTime() && t <= window.to.getTime();
 }
 
+/* ── New York metro area detection ──────────────────────────────────────── */
+
+const NY_METRO_CITIES: Record<string, string[]> = {
+  // city (lowercase) → states it counts for; venue strings are "Name, City, State"
+  "new york": ["new york", "ny"],
+  "new york city": ["new york", "ny"],
+  manhattan: ["new york", "ny"],
+  brooklyn: ["new york", "ny"],
+  bronx: ["new york", "ny"],
+  queens: ["new york", "ny"],
+  flushing: ["new york", "ny"],
+  harlem: ["new york", "ny"],
+  "staten island": ["new york", "ny"],
+  elmont: ["new york", "ny"],
+  uniondale: ["new york", "ny"],
+  "east meadow": ["new york", "ny"],
+  newark: ["new jersey", "nj"],
+  harrison: ["new jersey", "nj"],
+  "east rutherford": ["new jersey", "nj"],
+  "jersey city": ["new jersey", "nj"],
+};
+
+/** Venue strings look like "Name, City, State" (state sometimes missing). */
+export function isNyAreaVenue(venue?: string): boolean {
+  if (!venue) return false;
+  const parts = venue.split(",").map((p) => p.trim().toLowerCase());
+  for (let i = 1; i < parts.length; i++) {
+    const states = NY_METRO_CITIES[parts[i]];
+    if (!states) continue;
+    const state = parts[i + 1];
+    if (state !== undefined) {
+      if (states.includes(state)) return true;
+    } else if (parts.length === 2) {
+      // "Venue, City" form; in longer forms a trailing part is a state, not
+      // a city (e.g. "Highmark Stadium, Orchard Park, New York").
+      return true;
+    }
+  }
+  return false;
+}
+
 /* ── Broadcast / watch-link extraction ──────────────────────────────────── */
 
 /** Direct links for streaming services that commonly carry these games. */
@@ -153,13 +194,15 @@ export function mapTeamScheduleEvents(
       title = `[${tag}] ${ev.name ?? "Game"}`;
     }
     const tv = extractBroadcasts(comp);
+    const venue = venueString(comp?.venue);
     games.push({
       uid: `espn-${tag.toLowerCase()}-${ev.id}`,
       league: tag,
       title,
       start: new Date(ev.date).toISOString(),
       durationMins: durationFor(tag),
-      venue: venueString(comp?.venue),
+      venue,
+      nyArea: isNyAreaVenue(venue),
       tv: tv.length > 0 ? tv : undefined,
       url: watchUrlFor(tv, espnEventLink(ev.links)),
     });
@@ -243,6 +286,7 @@ export function mapF1Events(events: F1Event[], window: DateWindow): Game[] {
         start: new Date(session.date).toISOString(),
         durationMins: durationFor("F1"),
         venue: venue || undefined,
+        nyArea: isNyAreaVenue(venue),
         tv: tv.length > 0 ? tv : undefined,
         url: watchUrlFor(tv, espnEventLink(ev.links)),
       });
@@ -307,6 +351,7 @@ export function mapCricketEvents(
       start: new Date(ev.date).toISOString(),
       durationMins: durationFor(tag),
       venue: comp?.venue?.fullName,
+      nyArea: isNyAreaVenue(comp?.venue?.fullName),
       tv: tv.length > 0 ? tv : undefined,
       url: watchUrlFor(tv, espnEventLink(ev.links)),
     });
@@ -449,13 +494,15 @@ export function mapPwhlGames(games: PwhlGame[], window: DateWindow): Game[] {
     const url =
       watchUrlFor(tv, broadcasterList.find((b) => b.url)?.url) ??
       "https://www.thepwhl.com/en/where-to-watch";
+    const venue = [g.venue_name, g.venue_location].filter(Boolean).join(", ") || undefined;
     mapped.push({
       uid: `pwhl-${g.game_id}`,
       league: "PWHL",
       title: `[PWHL] ${sirens} ${isHome ? "vs" : "@"} ${opponent}`,
       start: new Date(g.GameDateISO8601).toISOString(),
       durationMins: durationFor("PWHL"),
-      venue: [g.venue_name, g.venue_location].filter(Boolean).join(", ") || undefined,
+      venue,
+      nyArea: isNyAreaVenue(venue),
       tv: tv.length > 0 ? tv : undefined,
       url,
     });

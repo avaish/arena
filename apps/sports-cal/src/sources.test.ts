@@ -4,6 +4,7 @@ import {
   mapCricketEvents,
   mapF1Events,
   mapPwhlGames,
+  isNyAreaVenue,
   mapTeamScheduleEvents,
   monthsInWindow,
   pickIndiaSeries,
@@ -39,6 +40,7 @@ describe("mapTeamScheduleEvents", () => {
     expect(games[0].title).toBe("[MLB] New York Yankees @ Boston Red Sox");
     expect(games[0].venue).toBe("Fenway Park, Boston, Massachusetts");
     expect(games[0].start).toBe("2026-08-01T23:05:00.000Z");
+    expect(games[0].nyArea).toBe(false);
   });
 
   it("extracts TV networks and a streaming watch link", () => {
@@ -155,6 +157,26 @@ describe("pickIndiaSeries", () => {
   });
 });
 
+describe("isNyAreaVenue", () => {
+  it("recognizes NY metro venues across NY and NJ", () => {
+    expect(isNyAreaVenue("Yankee Stadium, Bronx, New York")).toBe(true);
+    expect(isNyAreaVenue("Barclays Center, Brooklyn, New York")).toBe(true);
+    expect(isNyAreaVenue("Icahn Stadium, New York City, New York")).toBe(true);
+    expect(isNyAreaVenue("Prudential Center | Newark, Newark, NJ")).toBe(true);
+    expect(isNyAreaVenue("Red Bull Arena, Harrison, New Jersey")).toBe(true);
+    expect(isNyAreaVenue("MetLife Stadium, East Rutherford, New Jersey")).toBe(true);
+    expect(isNyAreaVenue("UBS Arena, Elmont, New York")).toBe(true);
+  });
+
+  it("rejects venues elsewhere", () => {
+    expect(isNyAreaVenue("Fenway Park, Boston, Massachusetts")).toBe(false);
+    expect(isNyAreaVenue("Highmark Stadium, Orchard Park, New York")).toBe(false);
+    expect(isNyAreaVenue("Lord's, London")).toBe(false);
+    expect(isNyAreaVenue("Etihad Stadium, Manchester")).toBe(false);
+    expect(isNyAreaVenue(undefined)).toBe(false);
+  });
+});
+
 describe("extractBroadcasts / watchUrlFor", () => {
   it("merges scoreboard geoBroadcasts and broadcast name lists", () => {
     const tv = extractBroadcasts({
@@ -209,5 +231,6 @@ describe("mapPwhlGames", () => {
     expect(games[0].venue).toBe("Prudential Center, Newark, NJ");
     expect(games[0].tv).toEqual(["TSN", "FanDuel"]);
     expect(games[0].url).toBe("https://www.thepwhl.com/en/where-to-watch");
+    expect(games[0].nyArea).toBe(true);
   });
 });
