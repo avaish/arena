@@ -49,7 +49,15 @@ export function gameToVevent(game: Game, dtstamp: Date): string[] {
     `SUMMARY:${escapeIcsText(game.title)}`,
   ];
   if (game.venue) lines.push(`LOCATION:${escapeIcsText(game.venue)}`);
-  lines.push(`DESCRIPTION:${escapeIcsText(game.league)} game`);
+  const description = [
+    `${game.league} game`,
+    game.tv?.length ? `TV: ${game.tv.join(", ")}` : undefined,
+    game.url ? `Watch: ${game.url}` : undefined,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  lines.push(`DESCRIPTION:${escapeIcsText(description)}`);
+  if (game.url) lines.push(`URL:${escapeIcsText(game.url)}`);
   lines.push("STATUS:CONFIRMED", "TRANSP:TRANSPARENT", "END:VEVENT");
   return lines;
 }

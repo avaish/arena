@@ -9,6 +9,8 @@ const game: Game = {
   start: "2026-08-01T23:30:00.000Z",
   durationMins: 150,
   venue: "Barclays Center, Brooklyn, New York",
+  tv: ["ESPN", "NBA League Pass"],
+  url: "https://www.espn.com/watch/",
 };
 
 describe("escapeIcsText", () => {
@@ -46,6 +48,21 @@ describe("gameToVevent", () => {
     expect(lines).toContain("SUMMARY:[NBA] Brooklyn Nets vs Boston Celtics");
     expect(lines).toContain("LOCATION:Barclays Center\\, Brooklyn\\, New York");
     expect(lines).toContain("UID:espn-nba-401584722@arena-sports-cal");
+  });
+
+  it("includes TV networks and a watch URL", () => {
+    const lines = gameToVevent(game, new Date("2026-07-17T00:00:00Z"));
+    expect(lines).toContain(
+      "DESCRIPTION:NBA game\\nTV: ESPN\\, NBA League Pass\\nWatch: https://www.espn.com/watch/"
+    );
+    expect(lines).toContain("URL:https://www.espn.com/watch/");
+  });
+
+  it("omits TV and URL lines when absent", () => {
+    const bare = { ...game, tv: undefined, url: undefined };
+    const lines = gameToVevent(bare, new Date("2026-07-17T00:00:00Z"));
+    expect(lines).toContain("DESCRIPTION:NBA game");
+    expect(lines.some((l) => l.startsWith("URL:"))).toBe(false);
   });
 });
 

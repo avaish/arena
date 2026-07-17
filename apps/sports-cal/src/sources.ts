@@ -41,6 +41,67 @@ function inWindow(iso: string, window: DateWindow): boolean {
   return !Number.isNaN(t) && t >= window.from.getTime() && t <= window.to.getTime();
 }
 
+/* ── Broadcast / watch-link extraction ──────────────────────────────────── */
+
+/** Direct links for streaming services that commonly carry these games. */
+const STREAM_URLS: [RegExp, string][] = [
+  [/mlb\.tv/i, "https://www.mlb.com/tv"],
+  [/apple tv/i, "https://tv.apple.com"],
+  [/espn\+/i, "https://plus.espn.com"],
+  [/^espn/i, "https://www.espn.com/watch/"],
+  [/peacock/i, "https://www.peacocktv.com/sports"],
+  [/paramount\+/i, "https://www.paramountplus.com"],
+  [/prime video|amazon/i, "https://www.amazon.com/gp/video/sports"],
+  [/netflix/i, "https://www.netflix.com"],
+  [/youtube/i, "https://www.youtube.com"],
+  [/\bmax\b|hbo/i, "https://play.max.com"],
+  [/league pass/i, "https://www.wnba.com/watch"],
+  [/nba tv/i, "https://www.nba.com/watch"],
+  [/willow/i, "https://www.willow.tv"],
+  [/nfl\+/i, "https://www.nfl.com/plus"],
+  [/f1 tv/i, "https://f1tv.formula1.com"],
+  [/fubo/i, "https://www.fubo.tv"],
+  [/disney\+/i, "https://www.disneyplus.com"],
+];
+
+export function watchUrlFor(tv: string[], fallback?: string): string | undefined {
+  for (const [pattern, url] of STREAM_URLS) {
+    if (tv.some((name) => pattern.test(name))) return url;
+  }
+  return fallback;
+}
+
+interface EspnBroadcastShapes {
+  /** Team schedule shape: broadcasts[].media.shortName; scoreboard also has broadcasts[].names[]. */
+  broadcasts?: { media?: { shortName?: string }; names?: string[] }[];
+  /** Scoreboard shape. */
+  geoBroadcasts?: { media?: { shortName?: string } }[];
+}
+
+export function extractBroadcasts(comp?: EspnBroadcastShapes): string[] {
+  const names = new Set<string>();
+  for (const b of comp?.broadcasts ?? []) {
+    if (b.media?.shortName) names.add(b.media.shortName);
+    for (const n of b.names ?? []) names.add(n);
+  }
+  for (const g of comp?.geoBroadcasts ?? []) {
+    if (g.media?.shortName) names.add(g.media.shortName);
+  }
+  return [...names].slice(0, 5);
+}
+
+interface EspnLink {
+  rel?: string[];
+  href?: string;
+}
+
+/** The event's web page on espn.com (gamecast), used as a watch-link fallback. */
+export function espnEventLink(links?: EspnLink[]): string | undefined {
+  return links?.find(
+    (l) => l.href?.startsWith("https://") && (l.rel?.includes("summary") || l.rel?.includes("live"))
+  )?.href;
+}
+
 /* ── ESPN team schedules (NBA/WNBA/MLB/NHL/NFL/soccer) ──────────────────── */
 
 export interface EspnTeamConfig {
@@ -55,10 +116,11 @@ interface EspnScheduleEvent {
   id?: string;
   date?: string;
   name?: string;
-  competitions?: {
+  links?: EspnLink[];
+  competitions?: ({
     venue?: { fullName?: string; address?: { city?: string; state?: string } };
     competitors?: { homeAway?: string; team?: { id?: string; displayName?: string } }[];
-  }[];
+  } & EspnBroadcastShapes)[];
 }
 
 function venueString(venue?: {
@@ -90,6 +152,7 @@ export function mapTeamScheduleEvents(
     } else {
       title = `[${tag}] ${ev.name ?? "Game"}`;
     }
+    const tv = extractBroadcasts(comp);
     games.push({
       uid: `espn-${tag.toLowerCase()}-${ev.id}`,
       league: tag,
@@ -97,6 +160,8 @@ export function mapTeamScheduleEvents(
       start: new Date(ev.date).toISOString(),
       durationMins: durationFor(tag),
       venue: venueString(comp?.venue),
+      tv: tv.length > 0 ? tv : undefined,
+      url: watchUrlFor(tv, espnEventLink(ev.links)),
     });
   }
   return games;
@@ -153,8 +218,9 @@ export async function fetchSoccerTeam(
 interface F1Event {
   id?: string;
   name?: string;
+  links?: EspnLink[];
   circuit?: { fullName?: string; address?: { city?: string; country?: string } };
-  competitions?: { date?: string; type?: { abbreviation?: string } }[];
+  competitions?: ({ date?: string; type?: { abbreviation?: string } } & EspnBroadcastShapes)[];
 }
 
 export function mapF1Events(events: F1Event[], window: DateWindow): Game[] {
@@ -169,6 +235,7 @@ export function mapF1Events(events: F1Event[], window: DateWindow): Game[] {
       if (!session.date || (type !== "Race" && type !== "Sprint")) continue;
       if (!inWindow(session.date, window)) continue;
       const suffix = type === "Sprint" ? " (Sprint)" : "";
+      const tv = extractBroadcasts(session);
       games.push({
         uid: `espn-f1-${ev.id}-${type.toLowerCase()}`,
         league: "F1",
@@ -176,6 +243,8 @@ export function mapF1Events(events: F1Event[], window: DateWindow): Game[] {
         start: new Date(session.date).toISOString(),
         durationMins: durationFor("F1"),
         venue: venue || undefined,
+        tv: tv.length > 0 ? tv : undefined,
+        url: watchUrlFor(tv, espnEventLink(ev.links)),
       });
     }
   }
@@ -194,10 +263,11 @@ interface CricketEvent {
   id?: string;
   date?: string;
   name?: string;
-  competitions?: {
+  links?: EspnLink[];
+  competitions?: ({
     venue?: { fullName?: string };
     competitors?: { homeAway?: string; team?: { displayName?: string } }[];
-  }[];
+  } & EspnBroadcastShapes)[];
 }
 
 /** Months (YYYYMM) overlapping the window, for cricket scoreboard queries. */
@@ -229,6 +299,7 @@ export function mapCricketEvents(
     const title = opp?.team?.displayName
       ? `[${tag}] ${teamName} ${sep} ${opp.team.displayName}`
       : `[${tag}] ${ev.name ?? teamName}`;
+    const tv = extractBroadcasts(comp);
     games.push({
       uid: `espn-cricket-${ev.id}`,
       league: tag,
@@ -236,6 +307,8 @@ export function mapCricketEvents(
       start: new Date(ev.date).toISOString(),
       durationMins: durationFor(tag),
       venue: comp?.venue?.fullName,
+      tv: tv.length > 0 ? tv : undefined,
+      url: watchUrlFor(tv, espnEventLink(ev.links)),
     });
   }
   return games;
@@ -336,6 +409,8 @@ interface PwhlGame {
   visiting_team_nickname?: string;
   venue_name?: string;
   venue_location?: string;
+  /** Keyed by feed type (home_video, national_video, …). */
+  broadcasters?: Record<string, { name?: string; url?: string }[]>;
 }
 
 const PWHL_SIRENS_TEAM_ID = "4";
@@ -369,6 +444,11 @@ export function mapPwhlGames(games: PwhlGame[], window: DateWindow): Game[] {
     const opponent = isHome
       ? pwhlTeamName(g.visiting_team_city, g.visiting_team_nickname)
       : pwhlTeamName(g.home_team_city, g.home_team_nickname);
+    const broadcasterList = Object.values(g.broadcasters ?? {}).flat();
+    const tv = [...new Set(broadcasterList.map((b) => b.name).filter((n): n is string => !!n))];
+    const url =
+      watchUrlFor(tv, broadcasterList.find((b) => b.url)?.url) ??
+      "https://www.thepwhl.com/en/where-to-watch";
     mapped.push({
       uid: `pwhl-${g.game_id}`,
       league: "PWHL",
@@ -376,6 +456,8 @@ export function mapPwhlGames(games: PwhlGame[], window: DateWindow): Game[] {
       start: new Date(g.GameDateISO8601).toISOString(),
       durationMins: durationFor("PWHL"),
       venue: [g.venue_name, g.venue_location].filter(Boolean).join(", ") || undefined,
+      tv: tv.length > 0 ? tv : undefined,
+      url,
     });
   }
   return mapped;

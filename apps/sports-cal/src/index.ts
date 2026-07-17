@@ -53,14 +53,17 @@ function homePage(payload: CachePayload, host: string): string {
   const now = Date.now();
   const upcoming = payload.games.filter((g) => Date.parse(g.start) >= now).slice(0, 20);
   const rows = upcoming
-    .map(
-      (g: Game) => `<tr>
+    .map((g: Game) => {
+      const tv = escapeHtml(g.tv?.join(", ") ?? "");
+      const tvCell = g.url ? `<a href="${escapeHtml(g.url)}">${tv || "watch"}</a>` : tv;
+      return `<tr>
         <td>${escapeHtml(ET_FORMAT.format(new Date(g.start)))}</td>
         <td><span class="tag">${escapeHtml(g.league)}</span></td>
         <td>${escapeHtml(g.title.replace(/^\[[^\]]*\]\s*/, ""))}</td>
         <td>${escapeHtml(g.venue ?? "")}</td>
-      </tr>`
-    )
+        <td>${tvCell}</td>
+      </tr>`;
+    })
     .join("\n");
   const errors = payload.errors
     .map((e) => `<li>${escapeHtml(e.source)}: ${escapeHtml(e.message)}</li>`)
@@ -85,9 +88,9 @@ function homePage(payload: CachePayload, host: string): string {
 <p>Times shown in Eastern Time. Subscribe on iPhone: <code>webcal://${escapeHtml(host)}/calendar.ics</code>
  (or <a href="/calendar.ics">download the .ics</a>).</p>
 <table>
-<thead><tr><th>When (ET)</th><th>League</th><th>Matchup</th><th>Venue</th></tr></thead>
+<thead><tr><th>When (ET)</th><th>League</th><th>Matchup</th><th>Venue</th><th>TV</th></tr></thead>
 <tbody>
-${rows || `<tr><td colspan="4">No upcoming games in the next ${payload.windowDays} days.</td></tr>`}
+${rows || `<tr><td colspan="5">No upcoming games in the next ${payload.windowDays} days.</td></tr>`}
 </tbody>
 </table>
 <p class="meta">${payload.games.length} games cached for the next ${payload.windowDays} days ·

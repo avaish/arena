@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  extractBroadcasts,
   mapCricketEvents,
   mapF1Events,
   mapPwhlGames,
   mapTeamScheduleEvents,
   monthsInWindow,
   pickIndiaSeries,
+  watchUrlFor,
 } from "./sources";
 
 const window = {
@@ -18,6 +20,7 @@ describe("mapTeamScheduleEvents", () => {
     id: "401",
     date: "2026-08-01T23:05Z",
     name: "New York Yankees at Boston Red Sox",
+    links: [{ rel: ["summary", "desktop"], href: "https://www.espn.com/mlb/game/_/gameId/401" }],
     competitions: [
       {
         venue: { fullName: "Fenway Park", address: { city: "Boston", state: "Massachusetts" } },
@@ -25,6 +28,7 @@ describe("mapTeamScheduleEvents", () => {
           { homeAway: "home", team: { id: "2", displayName: "Boston Red Sox" } },
           { homeAway: "away", team: { id: "10", displayName: "New York Yankees" } },
         ],
+        broadcasts: [{ media: { shortName: "MLB.TV" } }, { media: { shortName: "Sportsnet LA" } }],
       },
     ],
   };
@@ -35,6 +39,23 @@ describe("mapTeamScheduleEvents", () => {
     expect(games[0].title).toBe("[MLB] New York Yankees @ Boston Red Sox");
     expect(games[0].venue).toBe("Fenway Park, Boston, Massachusetts");
     expect(games[0].start).toBe("2026-08-01T23:05:00.000Z");
+  });
+
+  it("extracts TV networks and a streaming watch link", () => {
+    const games = mapTeamScheduleEvents([event], "10", "MLB", window);
+    expect(games[0].tv).toEqual(["MLB.TV", "Sportsnet LA"]);
+    expect(games[0].url).toBe("https://www.mlb.com/tv");
+  });
+
+  it("falls back to the ESPN event page when no streamer is known", () => {
+    const localOnly = {
+      ...event,
+      competitions: [
+        { ...event.competitions[0], broadcasts: [{ media: { shortName: "YES Network" } }] },
+      ],
+    };
+    const games = mapTeamScheduleEvents([localOnly], "10", "MLB", window);
+    expect(games[0].url).toBe("https://www.espn.com/mlb/game/_/gameId/401");
   });
 
   it("filters events outside the window", () => {
@@ -134,6 +155,23 @@ describe("pickIndiaSeries", () => {
   });
 });
 
+describe("extractBroadcasts / watchUrlFor", () => {
+  it("merges scoreboard geoBroadcasts and broadcast name lists", () => {
+    const tv = extractBroadcasts({
+      broadcasts: [{ names: ["CBS", "Paramount+"] }],
+      geoBroadcasts: [{ media: { shortName: "Paramount+" } }],
+    });
+    expect(tv).toEqual(["CBS", "Paramount+"]);
+    expect(watchUrlFor(tv)).toBe("https://www.paramountplus.com");
+  });
+
+  it("prefers streaming matches in declared order", () => {
+    expect(watchUrlFor(["Apple TV"])).toBe("https://tv.apple.com");
+    expect(watchUrlFor(["FOX"], "https://example.com/game")).toBe("https://example.com/game");
+    expect(watchUrlFor([])).toBeUndefined();
+  });
+});
+
 describe("mapPwhlGames", () => {
   it("maps Sirens games with UTC conversion from ET offsets", () => {
     const games = mapPwhlGames(
@@ -149,6 +187,12 @@ describe("mapPwhlGames", () => {
           visiting_team_nickname: "Sceptres",
           venue_name: "Prudential Center",
           venue_location: "Newark, NJ",
+          broadcasters: {
+            home_video: [
+              { name: "TSN", url: "https://www.thepwhl.com/en/where-to-watch" },
+              { name: "FanDuel" },
+            ],
+          },
         },
         {
           game_id: "301",
@@ -163,5 +207,7 @@ describe("mapPwhlGames", () => {
     expect(games[0].title).toBe("[PWHL] New York Sirens vs Toronto Sceptres");
     expect(games[0].start).toBe("2026-08-22T23:00:00.000Z");
     expect(games[0].venue).toBe("Prudential Center, Newark, NJ");
+    expect(games[0].tv).toEqual(["TSN", "FanDuel"]);
+    expect(games[0].url).toBe("https://www.thepwhl.com/en/where-to-watch");
   });
 });

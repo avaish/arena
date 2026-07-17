@@ -63,3 +63,12 @@ curl https://arena-sports-cal.atharv-vaish.workers.dev/refresh   # prime cache
 
 The KV namespace id in `wrangler.toml` was created with
 `npx wrangler kv namespace create CAL_KV`.
+
+## TV / watch links
+
+Each event's `DESCRIPTION` lists the broadcasters ESPN (or the PWHL feed)
+reports for the game, and the `URL` property carries a watch link: a direct
+link to the streaming service when one of the broadcasters is a known
+streamer (MLB.TV, Apple TV, ESPN+/ESPN, Peacock, Paramount+, Prime Video,
+league passes, Willow, …), otherwise the ESPN gamecast page for the game.
+The `/` page shows the same info in a TV column.

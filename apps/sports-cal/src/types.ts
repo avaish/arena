@@ -9,6 +9,10 @@ export interface Game {
   start: string;
   durationMins: number;
   venue?: string;
+  /** Broadcaster / streaming service names, e.g. ["ESPN", "Peacock"]. */
+  tv?: string[];
+  /** Best link to watch the game (streaming service, or the event page). */
+  url?: string;
 }
 
 export interface CachePayload {
