@@ -11,6 +11,9 @@ Cloudflare Worker that serves a merged iCalendar feed of upcoming games (next
 | `/calendar.ics` | The merged ICS feed (served from KV cache; UTC event times). |
 | `/`             | HTML sanity check: next 20 games in Eastern Time.            |
 | `/refresh`      | Force a refresh now; returns `{games, errors}` JSON.         |
+| `/now`          | JSON: games live right now + the next five upcoming.         |
+| `/tv`           | "Atharv Sports Network": full-screen auto-refreshing page    |
+|                 | showing the live game (with watch button) or a countdown.    |
 
 ## Subscribe on iPhone
 
