@@ -53,6 +53,7 @@ export function gameToVevent(game: Game, dtstamp: Date): string[] {
     `${game.league} game`,
     game.tv?.length ? `TV: ${game.tv.join(", ")}` : undefined,
     game.url ? `Watch: ${game.url}` : undefined,
+    game.tickets ? `🎟 ${game.ticketsNote ?? "Tickets"}: ${game.tickets}` : undefined,
   ]
     .filter(Boolean)
     .join("\n");

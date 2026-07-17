@@ -79,11 +79,14 @@ function homePage(payload: CachePayload, host: string): string {
     .map((g: Game) => {
       const tv = escapeHtml(g.tv?.join(", ") ?? "");
       const tvCell = g.url ? `<a href="${escapeHtml(g.url)}">${tv || "watch"}</a>` : tv;
+      const tixLink = g.tickets
+        ? ` <a href="${escapeHtml(g.tickets)}" title="${escapeHtml(g.ticketsNote ?? "Tickets")}">🎟️</a>`
+        : "";
       return `<tr>
         <td>${escapeHtml(ET_FORMAT.format(new Date(g.start)))}</td>
         <td><span class="tag">${escapeHtml(g.league)}</span></td>
         <td>${g.nyArea ? "🏠" : "📺"} ${escapeHtml(g.title.replace(/^\[[^\]]*\]\s*/, ""))}</td>
-        <td>${escapeHtml(g.venue ?? "")}</td>
+        <td>${escapeHtml(g.venue ?? "")}${tixLink}</td>
         <td>${tvCell}</td>
       </tr>`;
     })
@@ -164,11 +167,12 @@ function card(g, live) {
   const icon = g.nyArea ? "🏠" : "📺";
   const tv = g.tv && g.tv.length ? "TV: " + esc(g.tv.join(", ")) : "";
   const watch = g.url ? '<a class="watch' + (live ? "" : " secondary") + '" href="' + esc(g.url) + '">▶ Watch</a>' : "";
+  const tix = g.tickets ? ' <a class="watch secondary" href="' + esc(g.tickets) + '">🎟️ ' + esc(g.ticketsNote ?? "Tickets") + "</a>" : "";
   return '<div class="card">' +
     (live ? '<div class="status"><span class="live-dot"></span>Live now</div>' : "") +
     '<div class="title">' + icon + " " + esc(g.title) + "</div>" +
     '<div class="sub">' + esc(et(g.start)) + (g.venue ? " · " + esc(g.venue) : "") + "</div>" +
-    (tv ? '<div class="sub">' + tv + "</div>" : "") + watch + "</div>";
+    (tv ? '<div class="sub">' + tv + "</div>" : "") + watch + tix + "</div>";
 }
 function render(d) {
   const main = document.getElementById("main");

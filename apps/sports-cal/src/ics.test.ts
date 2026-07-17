@@ -64,6 +64,18 @@ describe("gameToVevent", () => {
     expect(lines).toContain("SUMMARY:🏠 [NBA] Brooklyn Nets vs Boston Celtics");
   });
 
+  it("adds a tickets line for attendable games", () => {
+    const homeGame = {
+      ...game,
+      nyArea: true,
+      tickets: "https://www.vividseats.com/x",
+      ticketsNote: "Tickets as low as $58",
+    };
+    const lines = gameToVevent(homeGame, new Date("2026-07-17T00:00:00Z"));
+    const description = lines.find((l) => l.startsWith("DESCRIPTION:"));
+    expect(description).toContain("🎟 Tickets as low as $58: https://www.vividseats.com/x");
+  });
+
   it("omits TV and URL lines when absent", () => {
     const bare = { ...game, tv: undefined, url: undefined };
     const lines = gameToVevent(bare, new Date("2026-07-17T00:00:00Z"));

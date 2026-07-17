@@ -15,6 +15,10 @@ export interface Game {
   tv?: string[];
   /** Best link to watch the game (streaming service, or the event page). */
   url?: string;
+  /** Ticket purchase link — only set for NY-area (attendable) games. */
+  tickets?: string;
+  /** e.g. "Tickets as low as $58". */
+  ticketsNote?: string;
 }
 
 export interface CachePayload {

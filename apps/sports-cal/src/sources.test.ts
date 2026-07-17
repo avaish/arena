@@ -49,6 +49,27 @@ describe("mapTeamScheduleEvents", () => {
     expect(games[0].url).toBe("https://www.mlb.com/tv");
   });
 
+  it("attaches ticket links only for NY-area games", () => {
+    const tickets = [
+      { summary: "Tickets as low as $58", links: [{ href: "https://www.vividseats.com/x" }] },
+    ];
+    const homeGame = {
+      ...event,
+      competitions: [
+        {
+          ...event.competitions[0],
+          venue: { fullName: "Yankee Stadium", address: { city: "Bronx", state: "New York" } },
+          tickets,
+        },
+      ],
+    };
+    const awayGame = { ...event, id: "402", competitions: [{ ...event.competitions[0], tickets }] };
+    const games = mapTeamScheduleEvents([homeGame, awayGame], "10", "MLB", window);
+    expect(games[0].tickets).toBe("https://www.vividseats.com/x");
+    expect(games[0].ticketsNote).toBe("Tickets as low as $58");
+    expect(games[1].tickets).toBeUndefined();
+  });
+
   it("falls back to the ESPN event page when no streamer is known", () => {
     const localOnly = {
       ...event,
@@ -209,6 +230,7 @@ describe("mapPwhlGames", () => {
           visiting_team_nickname: "Sceptres",
           venue_name: "Prudential Center",
           venue_location: "Newark, NJ",
+          tickets_url: "https://www.ticketmaster.com/sirens-game",
           broadcasters: {
             home_video: [
               { name: "TSN", url: "https://www.thepwhl.com/en/where-to-watch" },
@@ -232,5 +254,6 @@ describe("mapPwhlGames", () => {
     expect(games[0].tv).toEqual(["TSN", "FanDuel"]);
     expect(games[0].url).toBe("https://www.thepwhl.com/en/where-to-watch");
     expect(games[0].nyArea).toBe(true);
+    expect(games[0].tickets).toBe("https://www.ticketmaster.com/sirens-game");
   });
 });

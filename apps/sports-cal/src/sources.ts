@@ -136,6 +136,19 @@ interface EspnLink {
   href?: string;
 }
 
+interface EspnTickets {
+  summary?: string;
+  links?: { href?: string }[];
+}
+
+export function extractTickets(tickets?: EspnTickets[]): { url?: string; note?: string } {
+  const first = tickets?.[0];
+  return {
+    url: first?.links?.find((l) => l.href?.startsWith("http"))?.href,
+    note: first?.summary,
+  };
+}
+
 /** The event's web page on espn.com (gamecast), used as a watch-link fallback. */
 export function espnEventLink(links?: EspnLink[]): string | undefined {
   return links?.find(
@@ -161,6 +174,7 @@ interface EspnScheduleEvent {
   competitions?: ({
     venue?: { fullName?: string; address?: { city?: string; state?: string } };
     competitors?: { homeAway?: string; team?: { id?: string; displayName?: string } }[];
+    tickets?: EspnTickets[];
   } & EspnBroadcastShapes)[];
 }
 
@@ -195,6 +209,8 @@ export function mapTeamScheduleEvents(
     }
     const tv = extractBroadcasts(comp);
     const venue = venueString(comp?.venue);
+    const nyArea = isNyAreaVenue(venue);
+    const tix = nyArea ? extractTickets(comp?.tickets) : {};
     games.push({
       uid: `espn-${tag.toLowerCase()}-${ev.id}`,
       league: tag,
@@ -202,9 +218,11 @@ export function mapTeamScheduleEvents(
       start: new Date(ev.date).toISOString(),
       durationMins: durationFor(tag),
       venue,
-      nyArea: isNyAreaVenue(venue),
+      nyArea,
       tv: tv.length > 0 ? tv : undefined,
       url: watchUrlFor(tv, espnEventLink(ev.links)),
+      tickets: tix.url,
+      ticketsNote: tix.note,
     });
   }
   return games;
@@ -454,6 +472,7 @@ interface PwhlGame {
   visiting_team_nickname?: string;
   venue_name?: string;
   venue_location?: string;
+  tickets_url?: string;
   /** Keyed by feed type (home_video, national_video, …). */
   broadcasters?: Record<string, { name?: string; url?: string }[]>;
 }
@@ -495,6 +514,7 @@ export function mapPwhlGames(games: PwhlGame[], window: DateWindow): Game[] {
       watchUrlFor(tv, broadcasterList.find((b) => b.url)?.url) ??
       "https://www.thepwhl.com/en/where-to-watch";
     const venue = [g.venue_name, g.venue_location].filter(Boolean).join(", ") || undefined;
+    const nyArea = isNyAreaVenue(venue);
     mapped.push({
       uid: `pwhl-${g.game_id}`,
       league: "PWHL",
@@ -502,9 +522,10 @@ export function mapPwhlGames(games: PwhlGame[], window: DateWindow): Game[] {
       start: new Date(g.GameDateISO8601).toISOString(),
       durationMins: durationFor("PWHL"),
       venue,
-      nyArea: isNyAreaVenue(venue),
+      nyArea,
       tv: tv.length > 0 ? tv : undefined,
       url,
+      tickets: nyArea && g.tickets_url?.startsWith("http") ? g.tickets_url : undefined,
     });
   }
   return mapped;

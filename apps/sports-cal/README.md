@@ -79,3 +79,7 @@ The `/` page shows the same info in a TV column.
 Event titles are prefixed with 🏠 when the venue is in the New York metro
 area (NYC boroughs, Long Island arenas, Newark/Harrison/East Rutherford NJ)
 and 📺 otherwise.
+
+NY-area games also carry a ticket link (ESPN's Vivid Seats deep link with a
+"tickets as low as $X" note, or the PWHL's Ticketmaster link) in the event
+description, as a 🎟️ next to the venue on `/`, and as a button on `/tv`.
