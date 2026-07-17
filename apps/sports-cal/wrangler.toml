@@ -1,0 +1,10 @@
+name = "arena-sports-cal"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+[triggers]
+crons = ["0 */6 * * *"]
+
+[[kv_namespaces]]
+binding = "CAL_KV"
+id = "32bd92f8434b4577b1def77eb4d7695b"
